@@ -339,22 +339,22 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
 
   isDA(height: number): boolean {
     const isDA = height % 2016 === 0 && this.stateService.network === '';
-    if (isDA && !this.cacheService.daCache[height]) {
-      this.cacheService.daCache[height] = 1;
+    if (isDA && !this.cacheService.daCache[height]?.difficulty) {
+      const estimatedAdjustment = this.cacheService.daCache[height]?.adjustment || 1;
+      this.cacheService.daCache[height] = { adjustment: estimatedAdjustment, difficulty: 1 };
       this.apiService.getDifficultyAdjustmentByHeight$(height).pipe(
-        filter((da) => !!da),
         switchMap(da => {
-          const blocksAvailable = (this.height || this.chainTip) && this.blockStyles[(this.height || this.chainTip) - height];
+          const blocksAvailable = da && (this.height || this.chainTip) && this.blockStyles[(this.height || this.chainTip) - height];
           return blocksAvailable ? of(da) : throwError(() => new Error());
         }),
         retryWhen(errors =>
           errors.pipe(
-            delay(100),
+            delay(1000),
             take(3)
           )
         ),
         tap((da) => {
-          this.cacheService.daCache[height] = da.adjustment;
+          this.cacheService.daCache[height] = { adjustment: da.adjustment, difficulty: da.difficulty };
           this.blockStyles[(this.height || this.chainTip) - height].background = colorFromRetarget(da.adjustment);
         })
       ).subscribe();
@@ -377,7 +377,7 @@ export class BlockchainBlocksComponent implements OnInit, OnChanges, OnDestroy {
 
     return {
       left: addLeft + this.blockOffset * index + 'px',
-      background: this.isDA(block.height) ? colorFromRetarget(this.cacheService.daCache[block.height] || 1) :
+      background: this.isDA(block.height) ? colorFromRetarget(this.cacheService.daCache[block.height]?.adjustment || 1) :
       `repeating-linear-gradient(
         var(--secondary),
         var(--secondary) ${greenBackgroundHeight}%,

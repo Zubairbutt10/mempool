@@ -396,7 +396,7 @@ export class MempoolBlocksComponent implements OnInit, OnChanges, OnDestroy {
     }
     const isDA = height % 2016 === 0 && this.stateService.network === '';
     if (isDA && !this.cacheService.daCache[height]) {
-      this.cacheService.daCache[height] = 1;
+      this.cacheService.daCache[height] = { adjustment: 1 };
       this.difficultyAdjustments$.pipe(
         filter(da => !!da),
         switchMap(da => {
@@ -411,10 +411,10 @@ export class MempoolBlocksComponent implements OnInit, OnChanges, OnDestroy {
         ),
         tap(da => {
           const adjustment = parseFloat((1 + da.difficultyChange / 100).toFixed(4));
-          if (adjustment !== this.cacheService.daCache[height]) {
-            this.cacheService.daCache[height] = adjustment;
+          if (adjustment !== this.cacheService.daCache[height].adjustment) {
+            this.cacheService.daCache[height].adjustment = adjustment;
+            this.mempoolBlockStyles[height - this.chainTip - 1].background = colorFromRetarget(adjustment);
           }
-          this.mempoolBlockStyles[height - this.chainTip - 1].background = colorFromRetarget(adjustment);
         })
       ).subscribe();
     }
@@ -444,7 +444,7 @@ export class MempoolBlocksComponent implements OnInit, OnChanges, OnDestroy {
 
     return {
       'right': this.containerOffset + index * this.blockOffset + 'px',
-      'background': this.isDA(mempoolBlock.height) ? colorFromRetarget(this.cacheService.daCache[mempoolBlock.height] || 1) : backgroundGradients.join(',') + ')'
+      'background': this.isDA(mempoolBlock.height) ? colorFromRetarget(this.cacheService.daCache[mempoolBlock.height]?.adjustment || 1) : backgroundGradients.join(',') + ')'
     };
   }
 
