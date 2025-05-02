@@ -1,4 +1,4 @@
-name: CI Pipeline for the Backend and Frontend
+name Zubairbutt10: CI Pipeline for the Backend and Frontend
 
 on:
   pull_request:
